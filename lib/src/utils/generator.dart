@@ -145,24 +145,49 @@ class Generator {
   /// [image] Image to extract from
   /// [lineHeight] Printed line height in dots
   List<List<int>> _toColumnFormat(Image imgSrc, int lineHeight) {
-    final Image image = Image.from(imgSrc); // make a copy
+    // Make a copy of the source image
+    final Image image = Image.from(imgSrc);
 
     // Determine new width: closest integer that is divisible by lineHeight
     final int widthPx = (image.width + lineHeight) - (image.width % lineHeight);
     final int heightPx = image.height;
 
-    // Create a black bottom layer
-    final biggerImage = copyResize(image, width: widthPx, height: heightPx);
-    fill(biggerImage, 0);
-    // Insert source image into bigger one
-    drawImage(biggerImage, image, dstX: 0, dstY: 0);
+    // Create a new black image with the calculated dimensions
+    final biggerImage = Image(width: widthPx, height: heightPx);
+
+    // Fill with black (0)
+    for (final p in biggerImage) {
+      p.r = p.g = p.b = p.a = 0;
+    }
+
+    // Copy source image into bigger image
+    for (var y = 0; y < image.height; y++) {
+      for (var x = 0; x < image.width; x++) {
+        final srcPixel = image.getPixel(x, y);
+        biggerImage.setPixelRgba(
+            x, y, srcPixel.r, srcPixel.g, srcPixel.b, srcPixel.a);
+      }
+    }
 
     int left = 0;
     final List<List<int>> blobs = [];
 
+    // Extract slices
     while (left < widthPx) {
-      final Image slice = copyCrop(biggerImage, left, 0, lineHeight, heightPx);
-      final Uint8List bytes = slice.getBytes(format: Format.luminance);
+      // Create a new slice image
+      final slice = Image(width: lineHeight, height: heightPx);
+
+      // Copy region from bigger image to slice
+      for (var y = 0; y < heightPx; y++) {
+        for (var x = 0; x < lineHeight && (left + x) < widthPx; x++) {
+          final srcPixel = biggerImage.getPixel(left + x, y);
+          slice.setPixelRgba(
+              x, y, srcPixel.r, srcPixel.g, srcPixel.b, srcPixel.a);
+        }
+      }
+
+      // Convert slice to bytes using new API
+      final bytes = slice.getBytes(order: ChannelOrder.red);
       blobs.add(bytes);
       left += lineHeight;
     }
@@ -170,6 +195,7 @@ class Generator {
     return blobs;
   }
 
+  /// Image rasterization
   /// Image rasterization
   List<int> _toRasterFormat(Image imgSrc) {
     final Image image = Image.from(imgSrc); // make a copy
@@ -181,7 +207,9 @@ class Generator {
 
     // R/G/B channels are same -> keep only one channel
     final List<int> oneChannelBytes = [];
-    final List<int> buffer = image.getBytes(format: Format.rgba);
+    final List<int> buffer = image.getBytes(order: ChannelOrder.rgba);
+
+    // Take every 4th byte (first channel of RGBA)
     for (int i = 0; i < buffer.length; i += 4) {
       oneChannelBytes.add(buffer[i]);
     }
@@ -604,8 +632,9 @@ class Generator {
     //const bool highDensityVertical = true;
 
     invert(image);
-    flip(image, Flip.horizontal);
-    final Image imageRotated = copyRotate(image, 270);
+    flip(image, direction: FlipDirection.horizontal);
+    final Image imageRotated =
+        copyRotate(image, angle: 270, interpolation: Interpolation.nearest);
 
     //const int lineHeight = highDensityVertical ? 3 : 1;
     const int lineHeight = 3;

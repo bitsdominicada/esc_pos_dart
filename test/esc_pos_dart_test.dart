@@ -6,9 +6,8 @@ import 'package:esc_pos_dart/esc_pos_dart.dart';
 void main() {
   group('PrinterDocument', () {
     test('Tests not implemented', () {
-      var image = Image(1, 1);
-      image.setPixel(0, 0, 0xFF0000FF);
-
+      final image = Image(width: 1, height: 1);
+      image.setPixelRgba(0, 0, 255, 0, 0, 255);
       var doc = PrinterDocument();
 
       doc.addText(text: 'Hello', style: PrinterCommandStyle(align: 'left'));

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:esc_pos_dart/esc_pos_dart.dart';
 import 'package:resource_portable/resource.dart';
 import 'package:image/image.dart';
@@ -62,9 +64,9 @@ Future<bool> printDemoReceipt(NetworkPrinter printer) async {
   final bytes =
       await Resource('package:esc_pos_dart/resources/rabbit_black.jpg')
           .readAsBytes();
-  final image = decodeImage(bytes)!;
+  final image = decodeImage(Uint8List.fromList(bytes));
 
-  printer.image(image);
+  printer.image(image!);
 
   printer.text('GROCERYLY',
       styles: PosStyles(

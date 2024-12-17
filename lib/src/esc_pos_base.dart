@@ -425,12 +425,20 @@ class PrinterCommandCut extends PrinterCommand {
 class PrinterCommandImage extends PrinterCommand {
   final Image image;
   final String align;
-
   PrinterCommandImage(this.image, {this.align = 'center'});
 
   PrinterCommandImage.fromBytes(int width, int height, List<int> bytes,
       {String align = 'center'})
-      : this(Image.fromBytes(width, height, bytes), align: align);
+      : this(
+          Image.fromBytes(
+            width: width,
+            height: height,
+            bytes: Uint8List.fromList(bytes).buffer,
+            numChannels: 4,
+            format: Format.uint8,
+          ),
+          align: align,
+        );
 
   PrinterCommandImage.fromBase64(int width, int height, String bytes,
       {String align = 'center'})
